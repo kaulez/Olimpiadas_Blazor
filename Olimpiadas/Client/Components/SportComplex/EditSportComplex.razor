@@ -1,0 +1,61 @@
+﻿@using Olimpiadas.Shared.ViewModels;
+﻿<div class="modal fade show" id="myModal" style="display:block; background-color: rgba(10,10,10,.8);" aria-modal="true" role="dialog">
+    <div class="modal-dialog">
+        <EditForm Model="@SportComplexViewModel">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title font-size-headers">Editar Complejo Deportivo</h5>
+                    <button type="button" class="close" @onclick="CloseCampusModal">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form>
+                        <div class="form-group">
+                            <label class="font-labels-input" for="Localizacion">Localizacion:</label>
+                            <InputText type="text" class="form-control" id="nombre" @bind-Value="SportComplexViewModel.Localization" />
+                        </div>
+                        <div class="form-group">
+                            <label class="font-labels-input"  for="OrganizationManager">Jefe Organización:</label>
+                            <InputText type="text" class="form-control" id="presupuesto" @bind-Value="SportComplexViewModel.OrganizationManager" />
+                        </div>
+                        <div class="form-group">
+                            <label class="font-labels-input" for="AreaOcupada">Área Ocupada:</label>
+                            <InputNumber type="text" class="form-control" id="presupuesto" @bind-Value="SportComplexViewModel.TotalOccupiedArea" />
+                        </div>
+
+                        <div class="form-group">
+                            <label class="font-labels-input" for="AreaOcupada">Área Ocupada:</label>
+                            <InputSelect class="form-control" id="presupuesto" @bind-Value="SportComplexViewModel.Type">
+                                <option value="0">Único</option>
+                                <option value="1">Polideportivo</option>
+                            </InputSelect>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseCampusModal">Cerrar</button>
+                    <button type="button" class="btn btn-primary" @onclick="CreateCampusAndCloseModal">Guardar</button>
+                </div>
+            </div>
+        </EditForm>
+    </div>
+</div>
+@code {
+
+    [Parameter]
+    public EventCallback<SportComplexViewModel> OnCreate { get; set; }
+    [Parameter]
+    public EventCallback<bool> OnClose { get; set; }
+    [Parameter]
+    public SportComplexViewModel SportComplexViewModel { get; set; }
+
+    public Task CreateCampusAndCloseModal()
+    {
+        return OnCreate.InvokeAsync(SportComplexViewModel);
+    }
+    public Task CloseCampusModal()
+    {
+        return OnClose.InvokeAsync(false);
+    }
+}

@@ -1,0 +1,159 @@
+﻿@page "/"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+@using Olimpiadas.Shared
+@using Olimpiadas.Shared.ViewModels;
+@using Olimpiadas.Client.Components.Campus;
+@attribute [Authorize]
+@inject HttpClient Http
+
+<PageTitle>Index</PageTitle>
+
+@if (campuses == null)
+{
+    <p><em>Loading...</em></p>
+}
+
+else
+{
+    <div class="row mt-3 mb-3">
+        <span class=" font-size-titles title-badge">@TitleBadge</span>
+    </div>
+
+
+  <div class="row">
+        <div class="container">
+            <div class="gl-align-center">
+                <div class="table-container">
+                    <div class="row mb-2">
+                        <div class="button-add-container">
+                            <button class="btn btn-primary" @onclick="(() => OpenCreateCampus())">Agregar</button>
+                        </div>
+                    </div>
+                    <table class="table table-bordered">
+                        <thead class="thead-dark">
+                            <tr>
+                                <th class="text-algin-center">@TableIndexHeader</th>
+                                <th class="text-algin-center">@TableNameHeader</th>
+                                <th class="text-algin-center">@TableApproximateEstimationsHeader</th>
+                                <th class="text-algin-center">@TableOptionsHeader</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var (item, index) in campuses.Select((campus, index) => (campus, index+1)))
+                            {
+                                <tr>
+                                    <td width="1%" class="text-algin-center">@index</td>
+                                    <td width="10%" class="text-algin-center">@item.Name</td>
+                                    <td width="10%" class="text-algin-center">@item.ApproximateEstimation</td>
+                                    <td width="5%" class="text-algin-center">
+                                        <button class="btn btn-primary" @onclick="(() => OpenEditCampusModal(item))">Editar</button>
+                                        <button class="btn btn-danger" @onclick="(() => openDeleteDialogClose(item.Id))">Eliminar</button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    if (DeleteDialogOpen)
+    {
+        <UnsuscribeCampus Title="Eliminar Sede"
+        Text="Esta seguro de eliminar la sede?" OnClose="@OnDeleteDialogClose"></UnsuscribeCampus>
+    }
+
+    if (RegisterCampusModal)
+    {
+        <CreateCampusModal OnCreate="@OnCreateCampusModal"></CreateCampusModal>
+    }
+    if (EditCampusModal)
+    {
+        <UpdateCampusModal OnCreate="@OnEditCampusModal" campus="@CampusViewModelEdit" OnClose="@CloseEditCampusModal"
+                           RefreshCampus="@RefreshCampus"></UpdateCampusModal>
+    }
+}
+
+@code {
+    public bool RegisterCampusModal{ get; set; }
+    public bool EditCampusModal{ get; set; }
+    public bool DeleteDialogOpen{ get; set; }
+    public CampusViewModel CampusViewModelEdit{ get; set; }
+    private CampusViewModel[]? campuses;
+    public string TitleBadge = "Bandeja de Sedes";
+    public int IdCampusUnsuscribe;
+    public string TableIndexHeader = "Nº";
+    public string TableNameHeader = "Nombre";
+    public string TableOptionsHeader = "Opciones";
+    public string TableApproximateEstimationsHeader = "Presupuesto";
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            await LoadData();
+        }
+        catch (AccessTokenNotAvailableException exception)
+        {
+            exception.Redirect();
+        }
+    }
+    private async Task LoadData()
+    {
+        campuses = await Http.GetFromJsonAsync<CampusViewModel[]>("Campus");
+    }
+    private async Task OnDeleteDialogClose(bool acepted)
+    {
+        if (acepted)
+        {
+            await Http.DeleteAsync($"Campus/{IdCampusUnsuscribe}");
+            await LoadData();
+        }
+        DeleteDialogOpen = false;
+        StateHasChanged();
+    }
+    private async Task OnCreateCampusModal(CampusViewModel campus)
+    {
+        if (campus.Name!=null)
+        {
+            await Http.PostAsJsonAsync("Campus/CreateCampus", campus);
+            await LoadData();
+        }
+        RegisterCampusModal = false;
+        StateHasChanged();
+    }
+    private void openDeleteDialogClose(int idCampusUnsuscribe)
+    {
+        IdCampusUnsuscribe = idCampusUnsuscribe;
+        DeleteDialogOpen = true;
+        StateHasChanged();
+    }
+    private void OpenCreateCampus()
+    {
+        RegisterCampusModal = true;
+        StateHasChanged();      
+    }
+
+    private async  Task OpenEditCampusModal(CampusViewModel campus)
+    {
+        CampusViewModelEdit = await Http.GetFromJsonAsync<CampusViewModel>($"Campus/GetById/{campus.Id}");
+        EditCampusModal = true;
+    }
+    private void CloseEditCampusModal()
+    {
+        EditCampusModal = false;
+    }
+    private async Task OnEditCampusModal(CampusViewModel campus)
+    {
+        await Http.PostAsJsonAsync($"Campus/EditCampus", campus);
+        await LoadData();
+        EditCampusModal = false;
+        StateHasChanged();
+    }
+
+    public async Task RefreshCampus(int idCampus)
+    {
+        CampusViewModelEdit = await Http.GetFromJsonAsync<CampusViewModel>($"Campus/GetById/{idCampus}");
+    }
+
+}

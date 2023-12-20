@@ -1,0 +1,20 @@
+﻿
+<div>
+    <nav class="flex-column">
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                <span class="oi oi-home" aria-hidden="true"></span> @campusName
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="sportcomplex">
+                <span class="oi oi-plus" aria-hidden="true"></span> @sportComplexName
+            </NavLink>
+        </div>
+    </nav>
+</div>
+
+@code {
+    public const string campusName = "Sedes";
+    public const string sportComplexName = "Complejos";
+}

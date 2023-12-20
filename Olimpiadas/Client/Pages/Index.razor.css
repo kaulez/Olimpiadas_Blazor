@@ -1,0 +1,21 @@
+﻿.table-container {
+    width:40%
+}
+.gl-align-center{
+    display:flex;
+    justify-content:center;
+    align-items: center;
+}
+
+.title-badge{
+    text-align:center;
+}
+
+.text-algin-center{
+   text-align:center;
+}
+.button-add-container{
+    display:flex;
+    justify-content:end;
+    align-items:end;
+}

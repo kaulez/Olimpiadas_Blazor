@@ -1,0 +1,172 @@
+﻿@using Olimpiadas.Shared.ViewModels;
+@using Olimpiadas.Client.Components.SportComplex;
+@inject HttpClient Http
+﻿<div class="modal fade show" id="myModal" style="display:block; background-color: rgba(10,10,10,.8);" aria-modal="true" role="dialog">
+    <div class="modal-dialog">
+        <EditForm Model="@campus">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title font-size-titles">Editar Sede</h5>
+                    <button type="button" class="close" @onclick="CloseCampusModal">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form>
+                        <div class="form-group">
+                            <label class="font-labels-input" for="nombre">Nombre:</label>
+                            <InputText type="text" class="form-control" id="nombre" @bind-Value="campus.Name" />
+                        </div>
+                        <div class="form-group">
+                            <label class="font-labels-input" for="presupuesto">Presupuesto:</label>
+                            <InputNumber type="number" class="form-control" id="presupuesto" @bind-Value="campus.ApproximateEstimation" />
+                        </div>
+                    </form>
+                </div>
+                <span class="font-size-headers">Complejos Deportivos</span>
+                <div class="button-create-sport-complex">
+                    <button class="btn btn-primary btn-sm" @onclick="(() => ShowModalCreateSportComplex())"> Agregar </button>
+                </div>
+                <table class="table table-bordered">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th class="text-algin-center">@TableIndexHeader</th>
+                            <th class="text-algin-center">@TableLocalizationHeader</th>
+                            <th class="text-algin-center">@TableOrganizationManagerHeader</th>
+                            <th class="text-algin-center">@TableTotalOccupiedAreaHeader</th>
+                            <th class="text-algin-center">@TableTypeHeader</th>
+                            <th class="text-algin-center">@TableOptionsHeader</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var (item, index) in campus.SportComplexViewModels.Select((campus, index) => (campus, index+1)))
+                        {
+                            <tr>
+                                <td width="1%" class="text-algin-center">@index</td>
+                                <td width="10%" class="text-algin-center">@item.Localization</td>
+                                <td width="10%" class="text-algin-center">@item.OrganizationManager</td>
+                                <td width="10%" class="text-algin-center">@item.TotalOccupiedArea</td>
+                                <td width="10%" class="text-algin-center">@item.TypeString</td>
+                                <td width="5%" class="text-algin-center">
+                                    <button class="btn btn-primary btn-sm" @onclick="(() => OpenEditSportComplexModal(item))"> Editar</button>
+                                <button class="btn btn-danger mt-1 btn-sm" @onclick="(() => openDeleteDialogClose(item.Id))">Eliminar</button>
+
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseCampusModal">Cerrar</button>
+                    <button type="button" class="btn btn-primary" @onclick="EditCampusAndCloseModal">Guardar</button>
+                </div>
+            </div>
+           
+            @if (ShowModalCreateSportComplexSwich)
+            {
+                <CreateSportComplexModal OnClose="@CloseModalSportComplex"  OnCreate="@CreateSportComplex"></CreateSportComplexModal>
+            }
+            @if (ShowDeleteModalSportComplexSwich)
+            {
+                <UnsuscribeCampus Title="Eliminar Complejo Deportivo"
+                                  Text="Esta seguro de eliminar el complejo deportivo?" OnClose="@OnDeleteDialogClose"></UnsuscribeCampus>
+            }
+
+            @if (ShowEditSportComplexSwich)
+            {
+                <EditSportComplex SportComplexViewModel="SportComplexViewModelEdit" OnCreate="@editSportComplex" OnClose="@closeEditSportComplexModal"></EditSportComplex>
+            }
+
+        </EditForm>
+    </div>
+</div>
+@code {
+    public string TableIndexHeader = "Nº";
+    public string TableLocalizationHeader = "Localizacion";
+    public string TableOrganizationManagerHeader = "Jefe de Organizacion";
+    public string TableTotalOccupiedAreaHeader = "Area";
+    public string TableOptionsHeader = "Opciones";
+    public string TableTypeHeader = "Tipo";
+
+    public bool ShowEditSportComplexSwich;
+    public bool ShowDeleteModalSportComplexSwich;
+    public bool ShowModalCreateSportComplexSwich;
+
+
+
+    public SportComplexViewModel SportComplexViewModelEdit { get; set; }
+    public int IdSportComplexUnsuscribe;
+    [Parameter]
+    public EventCallback<CampusViewModel> OnCreate { get; set; }
+    [Parameter]
+    public EventCallback<bool> OnClose { get; set; }
+    [Parameter]
+    public CampusViewModel campus { get; set; }
+    [Parameter]
+    public EventCallback<int> RefreshCampus { get; set; }
+    public Task EditCampusAndCloseModal()
+    {
+        return OnCreate.InvokeAsync(campus);
+    }
+    public Task CloseCampusModal()
+    {
+        return OnClose.InvokeAsync(false);
+    }
+
+    public void ShowModalCreateSportComplex()
+    {
+        ShowModalCreateSportComplexSwich = true;
+        StateHasChanged();
+    }
+    public void CloseModalSportComplex()
+    {
+        ShowModalCreateSportComplexSwich = false;
+        StateHasChanged();
+    }
+    public async Task CreateSportComplex(SportComplexViewModel sportComplexViewModel)
+    {
+        sportComplexViewModel.CampusId = campus.Id;
+        await Http.PostAsJsonAsync("SportComplex/CreateSportComplex", sportComplexViewModel);
+        await RefreshCampus.InvokeAsync(campus.Id);
+        ShowModalCreateSportComplexSwich = false;
+        StateHasChanged();
+    }
+    public async Task OnDeleteDialogClose(bool apply)
+    {
+        if (apply)
+        {
+            await Http.DeleteAsync($"SportComplex/{IdSportComplexUnsuscribe}");
+            await RefreshCampus.InvokeAsync(campus.Id);
+        }
+        ShowDeleteModalSportComplexSwich = false;
+        StateHasChanged();
+
+    }
+
+    private void openDeleteDialogClose(int idSportComplexUnsuscribe)
+    {
+        IdSportComplexUnsuscribe = idSportComplexUnsuscribe;
+        ShowDeleteModalSportComplexSwich = true;
+        StateHasChanged();
+    }
+
+    private void OpenEditSportComplexModal(SportComplexViewModel SportComplex)
+    {
+        SportComplexViewModelEdit = SportComplex;
+        ShowEditSportComplexSwich = true;
+        StateHasChanged();
+    }
+
+    private async Task editSportComplex(SportComplexViewModel SportComplex)
+    {
+        await Http.PostAsJsonAsync($"SportComplex/EditSportComplex", SportComplex);
+        ShowEditSportComplexSwich = false;
+        await RefreshCampus.InvokeAsync(campus.Id);
+        StateHasChanged();
+    }
+    private void closeEditSportComplexModal()
+    {
+        ShowEditSportComplexSwich = false;
+        StateHasChanged();
+    }
+}
